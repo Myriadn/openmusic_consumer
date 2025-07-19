@@ -3,10 +3,12 @@ require('dotenv').config();
 const amqplib = require('amqplib');
 const PlaylistsService = require('./services/postgres/PlaylistService');
 const MailSender = require('./services/mail/MailSender');
+const Listener = require('./Listener');
 
 const init = async () => {
   const playlistsService = new PlaylistsService();
   const mailSender = new MailSender();
+  const listener = new Listener(playlistsService, mailSender);
 
   const connection = await amqplib.connect(process.env.RABBITMQ_SERVER);
   const channel = await connection.createChannel();
@@ -17,32 +19,10 @@ const init = async () => {
     durable: true,
   });
 
-  await channel.consume(
-    queue,
-    async (message) => {
-      try {
-        const { playlistId, targetEmail } = JSON.parse(
-          message.content.toString(),
-        );
+  // Memproses pesan dengan listener.listen dan opsi noAck: true
+  channel.consume(queue, listener.listen, { noAck: true });
 
-        const songs = await playlistsService.getSongsFromPlaylist(playlistId);
-        const playlist = await playlistsService.getPlaylistById(playlistId);
-
-        const result = await mailSender.sendEmail(
-          targetEmail,
-          JSON.stringify({ playlist: { ...playlist, songs } }),
-        );
-
-        console.log(`Email terkirim ke ${targetEmail}`, result);
-      } catch (error) {
-        console.error(error);
-      } finally {
-        // Menandai pesan sebagai telah selesai diproses
-        channel.ack(message);
-      }
-    },
-    { noAck: false },
-  ); // noAck: false agar kita bisa acknowledge secara manual
+  console.log(`Consumer sedang berjalan dan mendengarkan queue: ${queue}`);
 };
 
 init();
