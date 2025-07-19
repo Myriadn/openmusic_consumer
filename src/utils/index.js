@@ -8,10 +8,9 @@ const mapDBToModelSong = ({ id, title, performer }) => ({
 });
 
 // Mapper untuk mengubah data playlist dari format database ke model
-const mapDBToPlaylistModel = ({ id, name, username }) => ({
+const mapDBToPlaylistModel = ({ id, name }) => ({
   id,
   name,
-  username,
 });
 
 module.exports = {

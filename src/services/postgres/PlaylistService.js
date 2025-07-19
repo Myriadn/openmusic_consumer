@@ -1,3 +1,4 @@
+/* eslint-disable no-underscore-dangle */
 const { Pool } = require('pg');
 const NotFoundError = require('../../exceptions/NotFoundError');
 const { mapDBToModelSong, mapDBToPlaylistModel } = require('../../utils');
@@ -9,9 +10,7 @@ class PlaylistsService {
 
   async getPlaylistById(playlistId) {
     const query = {
-      text: `SELECT playlists.id, playlists.name, users.username FROM playlists
-             LEFT JOIN users ON users.id = playlists.owner
-             WHERE playlists.id = $1`,
+      text: 'SELECT id, name FROM playlists WHERE id = $1',
       values: [playlistId],
     };
     const result = await this._pool.query(query);
